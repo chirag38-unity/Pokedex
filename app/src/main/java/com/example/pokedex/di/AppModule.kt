@@ -1,13 +1,33 @@
 package com.example.pokedex.di
 
-import android.content.Context
+import com.example.pokedex.dataclasses.remote.PokeApi
+import com.example.pokedex.repositories.PokemonRepo
+import com.example.pokedex.util.Constants.BASE_URL
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.create
+import javax.inject.Singleton
 
-interface AppModule {
+@Module
+@InstallIn(SingletonComponent::class)
+object AppModule {
 
+    @Singleton
+    @Provides
+    fun providePokemonRepository(pokeApi: PokeApi) = PokemonRepo(pokeApi)
 
-
-}
-
-class AppModuleImpl(private val appContext: Context) : AppModule {
+    @Singleton
+    @Provides
+    fun providePokeApi() : PokeApi {
+        return Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl(BASE_URL)
+            .build()
+            .create(PokeApi::class.java)
+    }
 
 }
