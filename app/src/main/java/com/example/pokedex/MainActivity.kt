@@ -3,6 +3,7 @@ package com.example.pokedex
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.pokedex.dataclasses.local.PokemonListItem
@@ -24,21 +25,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Destination(start = true)
-@Composable
-fun PokemonListScreen(
-    navigator : DestinationsNavigator
-) {
-    
-}
-
 @Destination
 @Composable
 fun PokemonDetailScreen(
     navigator : DestinationsNavigator,
     pokemon: PokemonListItem
 ) {
-
+    Text(text = "Pokemon Detail Screen")
 }
 
 @Preview(showBackground = true)

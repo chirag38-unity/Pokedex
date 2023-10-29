@@ -1,6 +1,6 @@
 package com.example.pokedex.dataclasses.remote.responses
 
 data class GenerationI(
-    val red-blue: RedBlue,
+    val red_blue: RedBlue,
     val yellow: Yellow
 )

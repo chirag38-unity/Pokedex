@@ -104,8 +104,9 @@ dependencies {
     implementation("androidx.palette:palette-ktx:1.0.0")
 
     // Coil
-    implementation("io.coil-kt:coil:1.4.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
     implementation ("com.google.accompanist:accompanist-coil:0.15.0")
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
 
     // Coroutines
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -132,6 +133,8 @@ dependencies {
     //Dagger-Hilt
     implementation("com.google.dagger:hilt-android:2.48.1")
     ksp("com.google.dagger:hilt-compiler:2.48.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.48.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
 }
 
