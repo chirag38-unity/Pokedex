@@ -5,6 +5,7 @@ import com.example.pokedex.dataclasses.remote.responses.Pokemon
 import com.example.pokedex.dataclasses.remote.responses.PokemonList
 import com.example.pokedex.util.Resource
 import dagger.hilt.android.scopes.ActivityScoped
+import timber.log.Timber
 import javax.inject.Inject
 
 @ActivityScoped
@@ -28,6 +29,7 @@ class PokemonRepo @Inject constructor(
         val response = try {
             pokeApi.getPokemonInfo(name)
         } catch (e : Exception) {
+            Timber.d(e)
             return Resource.Error("An error occurred.")
         }
 

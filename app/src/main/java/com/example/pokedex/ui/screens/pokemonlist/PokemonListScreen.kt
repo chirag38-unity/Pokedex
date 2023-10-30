@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,12 +60,13 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.pokedex.R
 import com.example.pokedex.dataclasses.local.PokemonListItem
-import com.example.pokedex.destinations.PokemonDetailScreenDestination
+import com.example.pokedex.ui.screens.destinations.PokemonDetailScreenDestination
 import com.example.pokedex.ui.theme.RobotoCondensed
 import com.example.pokedex.viewmodels.PokedexListEntry
 import com.example.pokedex.viewmodels.PokedexListViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import java.util.Locale
 
 @Destination(start = true)
 @Composable
@@ -124,11 +127,11 @@ fun SearchBar(
                 .background(Color.White, CircleShape)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .onFocusChanged {
-                    isHintDisplayed = !it.isFocused && text.isNotEmpty()
+                    isHintDisplayed = !it.isFocused && text.isEmpty()
                 }
         )
         if(isHintDisplayed){
-            Text(text = hint, color = Color.LightGray,
+            Text(text = hint, color = Color.Gray,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
         }
     }
@@ -164,7 +167,7 @@ fun PokedexEntry(
                     PokemonDetailScreenDestination(
                         PokemonListItem(
                             dominantColor = dominantColor.toArgb(),
-                            name = entry.pokemonName
+                            name = entry.pokemonName.toLowerCase(Locale.ROOT) ?: ""
                         )
                     )
                 )
