@@ -25,18 +25,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -45,11 +45,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.airbnb.lottie.compose.LottieAnimation
@@ -60,6 +58,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.pokedex.R
 import com.example.pokedex.dataclasses.local.PokemonListItem
+import com.example.pokedex.ui.rememberWindowInfo
 import com.example.pokedex.ui.screens.destinations.PokemonDetailScreenDestination
 import com.example.pokedex.ui.theme.RobotoCondensed
 import com.example.pokedex.viewmodels.PokedexListEntry
@@ -78,31 +77,83 @@ fun PokemonListScreen(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
     ) {
-        Column {
-            Spacer(modifier = Modifier.height(20.dp))
+        val windowInfo = rememberWindowInfo()
+        var searchText = rememberSaveable {
+            mutableStateOf("")
+        }
+
+        if(windowInfo.screenHeight > windowInfo.screenWidth) {
+            PortraitListScreen(navigator, viewModel, searchText)
+        } else {
+            LandscapeListScreen(navigator = navigator, viewModel = viewModel, searchText)
+        }
+
+
+    }
+}
+
+@Composable
+fun PortraitListScreen(
+    navigator: DestinationsNavigator,
+    viewModel: PokedexListViewModel,
+    searchText: MutableState<String>
+) {
+    Column {
+        Spacer(modifier = Modifier.height(20.dp))
+        Image(painter = painterResource(id = R.drawable.pokemon_theme_image ),
+            contentDescription = "Pokemon Theme Logo",
+            modifier = Modifier
+                .fillMaxWidth(.4f)
+                .align(CenterHorizontally))
+        SearchBar(
+            hint = "What are you looking for...",
+            searchText = searchText,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ){
+            viewModel.searchPokedexList(it)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        PokemonListVertical(navigator = navigator)
+    }
+}
+
+@Composable
+fun LandscapeListScreen(
+    navigator: DestinationsNavigator,
+    viewModel: PokedexListViewModel,
+    searchText: MutableState<String>
+) {
+    Column {
+        Spacer(modifier = Modifier.height(12.dp))
+        Row ( ) {
             Image(painter = painterResource(id = R.drawable.pokemon_theme_image ),
                 contentDescription = "Pokemon Theme Logo",
                 modifier = Modifier
-                    .fillMaxWidth(.4f)
-                    .align(CenterHorizontally))
-            SearchBar(hint = "What are you looking for...",
+                    .padding(top = 15.dp, start = 15.dp)
+                    .fillMaxWidth(.1f))
+            SearchBar(
+                hint = "What are you looking for...",
+                searchText = searchText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ){
                 viewModel.searchPokedexList(it)
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            PokemonList(navigator = navigator)
         }
+        PokemonListHorizontal(navigator = navigator)
+
     }
 }
 
 @Composable
 fun SearchBar(
+    searchText: MutableState<String>,
     modifier: Modifier = Modifier,
-    hint : String = "",
-    onSearch : (String) -> Unit = {}
+    hint: String = "",
+    onSearch: (String) -> Unit = {}
 ) {
     var text by remember {
         mutableStateOf("")
@@ -113,9 +164,9 @@ fun SearchBar(
     
     Box(modifier = modifier){
         BasicTextField(
-            value = text,
+            value = searchText.value,
             onValueChange = {
-                text = it
+                searchText.value = it
                 onSearch(it)
             },
             maxLines = 1,
@@ -127,7 +178,7 @@ fun SearchBar(
                 .background(Color.White, CircleShape)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .onFocusChanged {
-                    isHintDisplayed = !it.isFocused && text.isEmpty()
+                    isHintDisplayed = !it.isFocused && searchText.value.isEmpty()
                 }
         )
         if(isHintDisplayed){
@@ -229,7 +280,44 @@ fun PokedexRow(
 }
 
 @Composable
-fun PokemonList(
+fun PokedexRowHorizontal(
+    rowIndex : Int,
+    entries : List<PokedexListEntry>,
+    navigator: DestinationsNavigator
+) {
+
+    Column {
+        Row {
+            PokedexEntry(entry = entries[rowIndex * 3],
+                navigator = navigator,
+                modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(16.dp))
+            if(entries.size >= rowIndex * 3 + 3) {
+                PokedexEntry(entry = entries[rowIndex * 3 + 1],
+                    navigator = navigator,
+                    modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(16.dp))
+                PokedexEntry(entry = entries[rowIndex * 3 + 2],
+                    navigator = navigator,
+                    modifier = Modifier.weight(1f))
+            } else if (entries.size >= rowIndex * 3 + 2) {
+                PokedexEntry(entry = entries[rowIndex * 3 + 1],
+                    navigator = navigator,
+                    modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
+            }
+            else {
+                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+
+}
+
+@Composable
+fun PokemonListVertical(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
@@ -252,6 +340,7 @@ fun PokemonList(
             PokedexRow(rowIndex = it, entries = pokemonList, navigator = navigator)
         }
     }
+    
     Box(
         contentAlignment = Center,
         modifier = Modifier.fillMaxSize()
@@ -265,6 +354,48 @@ fun PokemonList(
             }
         }
     }
+}
+
+@Composable
+fun PokemonListHorizontal(
+    navigator: DestinationsNavigator,
+    viewModel: PokedexListViewModel = hiltViewModel()
+) {
+
+    val pokemonList by remember { viewModel.pokemonList }
+    val endReach by remember { viewModel.endReached }
+    val loadError by remember { viewModel.loadError }
+    val isLoading by remember { viewModel.isLoading }
+    val isSearching by remember { viewModel.isSearching }
+
+    LazyColumn(contentPadding = PaddingValues(16.dp)) {
+        val itemCount = if(pokemonList.size % 3 == 0) {
+            pokemonList.size / 3
+        } else {
+            pokemonList.size / 3 + 1
+        }
+        items(itemCount) {
+            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
+                viewModel.loadPokedexPaginated()
+            }
+            PokedexRowHorizontal(rowIndex = it, entries = pokemonList, navigator = navigator)
+        }
+    }
+
+    Box(
+        contentAlignment = Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if(isLoading) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        }
+        if(loadError.isNotEmpty()){
+            RetrySection(error = loadError) {
+                viewModel.loadPokedexPaginated()
+            }
+        }
+    }
+
 }
 
 @Composable

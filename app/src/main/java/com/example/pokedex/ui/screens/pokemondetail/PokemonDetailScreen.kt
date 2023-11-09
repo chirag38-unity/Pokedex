@@ -1,6 +1,8 @@
 package com.example.pokedex.ui.screens.pokemondetail
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateValue
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import com.example.pokedex.R
 import androidx.compose.foundation.background
@@ -129,38 +131,16 @@ fun PokemonDetailScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             if(pokemonInfo is Resource.Success) {
-                pokemonInfo.data?.sprites?.let { sprites ->
-
-//                    var imageUrl by remember {
-//                        mutableStateOf(sprites.front_default)
-//                    }
-//                    val urls = listOf(sprites.front_default, sprites.back_default,
-//                        sprites.front_shiny, sprites.back_shiny)
-//                    var index by remember {
-//                        mutableStateOf(0)
-//                    }
-//
-//                    CoroutineScope(Dispatchers.IO).launch {
-//                        while(true){
-//                            delay(5000)
-//                            index = (index + 1) % urls.size
-//                            val newImageUrl = urls[index]
-//                            imageUrl = newImageUrl
-//                            Timber.tag("image").d("Index${index} url-${imageUrl}")
-//                        }
-//                    }
-
-                    SubcomposeAsyncImage(model = ImageRequest.Builder(LocalContext.current)
-                        .data(sprites.front_default)
-                        .crossfade(true)
-                        .build(),
-                        contentDescription = pokemonInfo.data.name,
-                        modifier = Modifier
-                            .size(pokemonImageSize)
-                            .offset(y = topPadding))
-                }
+                SubcomposeAsyncImage(model = ImageRequest.Builder(LocalContext.current)
+                    .data(pokemonInfo.data?.sprites?.front_default)
+                    .crossfade(true)
+                    .build(),
+                    contentDescription = pokemonInfo.data?.name,
+                    modifier = Modifier
+                        .size(pokemonImageSize)
+                        .offset(y = topPadding)
+                )
             }
-
         }
     }
 }
