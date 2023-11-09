@@ -3,6 +3,7 @@ package com.example.pokedex.ui.screens.pokemonlist
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -78,7 +80,7 @@ fun PokemonListScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         val windowInfo = rememberWindowInfo()
-        var searchText = rememberSaveable {
+        val searchText = rememberSaveable {
             mutableStateOf("")
         }
 
@@ -96,7 +98,7 @@ fun PokemonListScreen(
 fun PortraitListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
-    searchText: MutableState<String>
+    searchText: MutableState<String>,
 ) {
     Column {
         Spacer(modifier = Modifier.height(20.dp))
@@ -123,7 +125,7 @@ fun PortraitListScreen(
 fun LandscapeListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
-    searchText: MutableState<String>
+    searchText: MutableState<String>,
 ) {
     Column {
         Spacer(modifier = Modifier.height(12.dp))
@@ -155,12 +157,10 @@ fun SearchBar(
     hint: String = "",
     onSearch: (String) -> Unit = {}
 ) {
-    var text by remember {
-        mutableStateOf("")
+    var isHintDisplayed by rememberSaveable {
+        mutableStateOf(hint != "" )
     }
-    var isHintDisplayed by remember {
-        mutableStateOf(hint != "")
-    }
+    val focusManager = LocalFocusManager.current
     
     Box(modifier = modifier){
         BasicTextField(
@@ -177,14 +177,17 @@ fun SearchBar(
                 .shadow(5.dp, CircleShape)
                 .background(Color.White, CircleShape)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
+                .focusable()
                 .onFocusChanged {
                     isHintDisplayed = !it.isFocused && searchText.value.isEmpty()
                 }
+
         )
         if(isHintDisplayed){
             Text(text = hint, color = Color.Gray,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
         }
+
     }
 }
 

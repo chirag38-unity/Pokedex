@@ -59,6 +59,7 @@ import coil.request.ImageRequest
 import com.example.pokedex.dataclasses.local.PokemonListItem
 import com.example.pokedex.dataclasses.remote.responses.Pokemon
 import com.example.pokedex.dataclasses.remote.responses.Type
+import com.example.pokedex.ui.rememberWindowInfo
 import com.example.pokedex.util.Resource
 import com.example.pokedex.util.parseStatToAbbr
 import com.example.pokedex.util.parseStatToColor
@@ -84,11 +85,31 @@ fun PokemonDetailScreen(
 
     viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
-    val topPadding : Dp = 20.dp
-    val pokemonImageSize : Dp = 200.dp
+//    val topPadding : Dp = 20.dp
+//    val pokemonImageSize : Dp = 200.dp
     val pokemonInfo = produceState<Resource<Pokemon>>(initialValue = Resource.Loading() ) {
         value = viewModel.getPokemonInfo(pokemon.name)
     }.value
+
+    val windowInfo = rememberWindowInfo()
+
+    if(windowInfo.screenHeight > windowInfo.screenWidth) {
+        PokemonDetailPortraitView(navigator = navigator, pokemonInfo = pokemonInfo, pokemon = pokemon)
+    } else {
+        PokemonDetailLandscapeView(navigator = navigator, pokemonInfo = pokemonInfo, pokemon = pokemon)
+    }
+
+}
+
+@Composable
+fun PokemonDetailPortraitView(
+    navigator: DestinationsNavigator,
+    pokemonInfo : Resource<Pokemon>,
+    pokemon: PokemonListItem,
+    topPadding : Dp = 20.dp,
+    pokemonImageSize : Dp = 300.dp
+) {
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -101,13 +122,14 @@ fun PokemonDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(.2f)
-                .align(Alignment.TopCenter))
+                .align(Alignment.TopCenter)
+        )
         PokemonDetailStateWrapper(
             pokemonInfo = pokemonInfo,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = topPadding + pokemonImageSize / 2f,
+                    top = topPadding + pokemonImageSize / 2f - 10.dp,
                     start = 16.dp,
                     end = 16.dp,
                     bottom = 16.dp
@@ -125,16 +147,18 @@ fun PokemonDetailScreen(
                     start = 16.dp,
                     end = 16.dp,
                     bottom = 16.dp
-                ))
+                )
+        )
         Box(
             contentAlignment = Alignment.TopCenter,
             modifier = Modifier.fillMaxSize()
         ) {
-            if(pokemonInfo is Resource.Success) {
-                SubcomposeAsyncImage(model = ImageRequest.Builder(LocalContext.current)
-                    .data(pokemonInfo.data?.sprites?.front_default)
-                    .crossfade(true)
-                    .build(),
+            if (pokemonInfo is Resource.Success) {
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(pokemonInfo.data?.sprites?.front_default)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = pokemonInfo.data?.name,
                     modifier = Modifier
                         .size(pokemonImageSize)
@@ -143,6 +167,82 @@ fun PokemonDetailScreen(
             }
         }
     }
+
+}
+
+@Composable
+fun PokemonDetailLandscapeView(
+    navigator: DestinationsNavigator,
+    pokemonInfo : Resource<Pokemon>,
+    pokemon: PokemonListItem,
+    topPadding : Dp = 30.dp,
+    pokemonImageSize : Dp = 400.dp
+) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(pokemon.dominantColor))
+            .padding(bottom = 16.dp)
+    ) {
+
+        PokemonDetailTopSection(
+            navigator = navigator,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(.1f)
+                .align(Alignment.TopCenter)
+        )
+        Row {
+
+            Box(
+                contentAlignment = Alignment.TopCenter,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(.4f)
+            ) {
+                if (pokemonInfo is Resource.Success) {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(pokemonInfo.data?.sprites?.front_default)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = pokemonInfo.data?.name,
+                        modifier = Modifier
+                            .size(pokemonImageSize)
+                            .offset(y = topPadding)
+                    )
+                }
+            }
+
+            PokemonDetailStateWrapperLandscape(pokemonInfo = pokemonInfo,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(.6f)
+                    .padding(
+                        top = topPadding,
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 16.dp
+                    )
+                    .shadow(10.dp, RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp),
+                loadingModifier = Modifier
+                    .size(100.dp)
+                    .padding(
+
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 16.dp
+                    )
+            )
+
+        }
+
+    }
+
 }
 
 @Composable
@@ -166,8 +266,36 @@ fun PokemonDetailTopSection(
                 .offset(16.dp, 16.dp)
                 .clickable {
                     navigator.popBackStack()
-                })
+                }
+        )
     }
+}
+
+@Composable
+fun PokemonDetailStateWrapperLandscape(
+    pokemonInfo : Resource<Pokemon>,
+    modifier: Modifier = Modifier,
+    loadingModifier : Modifier = Modifier
+) {
+
+    when(pokemonInfo) {
+        is Resource.Success -> {
+            PokemonDetailSectionLandscape(
+                pokemonInfo = pokemonInfo.data!!,
+                modifier = modifier.offset( y = (-20).dp))
+        }
+        is Resource.Error -> {
+            Text(text = pokemonInfo.message!!,
+                color = Color.Red,
+                modifier = modifier)
+        }
+        is Resource.Loading -> {
+            CircularProgressIndicator(
+                color = MaterialTheme.colorScheme.primary,
+                modifier = loadingModifier)
+        }
+    }
+
 }
 
 @Composable
@@ -194,6 +322,33 @@ fun PokemonDetailStateWrapper(
                 modifier = loadingModifier
             )
         }
+    }
+
+}
+
+@Composable
+fun PokemonDetailSectionLandscape(
+    pokemonInfo: Pokemon,
+    modifier: Modifier = Modifier) {
+
+    val scrollState = rememberScrollState()
+    Column (
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .fillMaxSize()
+            .offset(y = 20.dp)
+            .verticalScroll(scrollState)
+    ) {
+        Text(text = "#${pokemonInfo.id} ${pokemonInfo.name.capitalize(Locale.ROOT)}",
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            fontSize = 30.sp,
+            color = MaterialTheme.colorScheme.onSurface)
+        PokemonTypeSection(types = pokemonInfo.types)
+        PokemonDetailDataSection(pokemonWeight = pokemonInfo.weight,
+            pokemonHeight = pokemonInfo.height)
+        Spacer(modifier = Modifier.height(8.dp))
+        PokemonBaseStats(pokemonInfo = pokemonInfo)
     }
 
 }
