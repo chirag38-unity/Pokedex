@@ -85,8 +85,6 @@ fun PokemonDetailScreen(
 
     viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
-//    val topPadding : Dp = 20.dp
-//    val pokemonImageSize : Dp = 200.dp
     val pokemonInfo = produceState<Resource<Pokemon>>(initialValue = Resource.Loading() ) {
         value = viewModel.getPokemonInfo(pokemon.name)
     }.value
@@ -107,7 +105,7 @@ fun PokemonDetailPortraitView(
     pokemonInfo : Resource<Pokemon>,
     pokemon: PokemonListItem,
     topPadding : Dp = 20.dp,
-    pokemonImageSize : Dp = 300.dp
+    pokemonImageSize : Dp = 200.dp
 ) {
 
     Box(
@@ -129,7 +127,7 @@ fun PokemonDetailPortraitView(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = topPadding + pokemonImageSize / 2f - 10.dp,
+                    top = topPadding + pokemonImageSize / 2f,
                     start = 16.dp,
                     end = 16.dp,
                     bottom = 16.dp
@@ -232,7 +230,6 @@ fun PokemonDetailLandscapeView(
                 loadingModifier = Modifier
                     .size(100.dp)
                     .padding(
-
                         start = 16.dp,
                         end = 16.dp,
                         bottom = 16.dp

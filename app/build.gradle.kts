@@ -121,20 +121,19 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.6.2")
 
-    //Retrofit
+    // Retrofit
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-scalars:2.9.0")
 
-    //Serialiser
+    // Serialiser
     implementation ("com.google.code.gson:gson:2.10")
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
 
-    //Dagger-Hilt
+    // Dagger-Hilt
     implementation("com.google.dagger:hilt-android:2.48.1")
     ksp("com.google.dagger:hilt-compiler:2.48.1")
     ksp("com.google.dagger:hilt-android-compiler:2.48.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
 }
 
