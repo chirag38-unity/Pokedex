@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -94,11 +96,16 @@ fun PokemonListScreen(
         val searchText = rememberSaveable {
             mutableStateOf("")
         }
+//        var scrollState = rememberSaveable {
+//            mutableStateOf(rememberLazyListState())
+//        }
+
+        val scrollState = rememberLazyListState()
 
         if(windowInfo.screenHeight > windowInfo.screenWidth) {
-            PortraitListScreen(navigator, viewModel, searchText)
+            PortraitListScreen(navigator, viewModel, searchText, scrollState)
         } else {
-            LandscapeListScreen(navigator = navigator, viewModel = viewModel, searchText)
+            LandscapeListScreen(navigator = navigator, viewModel = viewModel, searchText, scrollState)
         }
 
     }
@@ -109,6 +116,7 @@ fun PortraitListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
     searchText: MutableState<String>,
+    scrollState: LazyListState,
 ) {
     Column {
         Spacer(modifier = Modifier.height(20.dp))
@@ -127,7 +135,7 @@ fun PortraitListScreen(
             viewModel.searchPokedexList(it)
         }
         Spacer(modifier = Modifier.height(16.dp))
-        PokemonListVertical(navigator = navigator)
+        PokemonListVertical(navigator = navigator, scrollState)
     }
 }
 
@@ -136,6 +144,7 @@ fun LandscapeListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
     searchText: MutableState<String>,
+    scrollState: LazyListState,
 ) {
     Column {
         Spacer(modifier = Modifier.height(12.dp))
@@ -155,8 +164,8 @@ fun LandscapeListScreen(
                 viewModel.searchPokedexList(it)
             }
         }
-        PokemonListHorizontal(navigator = navigator)
-
+        Spacer(modifier = Modifier.height(16.dp))
+        PokemonListHorizontal(navigator = navigator, scrollState)
     }
 }
 
@@ -347,6 +356,7 @@ fun PokedexRowHorizontal(
 @Composable
 fun PokemonListVertical(
     navigator: DestinationsNavigator,
+    scrollState: LazyListState,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
     val pokemonList by remember { viewModel.pokemonList }
@@ -355,7 +365,10 @@ fun PokemonListVertical(
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
 
-    LazyColumn(contentPadding = PaddingValues(16.dp)) {
+    LazyColumn(
+        state = scrollState,
+        contentPadding = PaddingValues(16.dp)
+    ) {
         val itemCount = if(pokemonList.size % 2 == 0) {
             pokemonList.size / 2
         } else {
@@ -387,6 +400,7 @@ fun PokemonListVertical(
 @Composable
 fun PokemonListHorizontal(
     navigator: DestinationsNavigator,
+    scrollState: LazyListState,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
 
@@ -396,7 +410,10 @@ fun PokemonListHorizontal(
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
 
-    LazyColumn(contentPadding = PaddingValues(16.dp)) {
+    LazyColumn(
+        state = scrollState,
+        contentPadding = PaddingValues(16.dp)
+    ) {
         val itemCount = if(pokemonList.size % 3 == 0) {
             pokemonList.size / 3
         } else {
