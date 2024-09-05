@@ -82,7 +82,6 @@ import kotlin.math.round
 fun PokemonDetailScreen(
     navigator : DestinationsNavigator,
     pokemon: PokemonListItem,
-
     viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
     val pokemonInfo = produceState<Resource<Pokemon>>(initialValue = Resource.Loading() ) {

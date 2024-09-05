@@ -1,5 +1,7 @@
 package com.example.pokedex.ui.screens.pokemonlist
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,17 +37,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
@@ -100,7 +110,8 @@ fun PokemonListScreen(
 //            mutableStateOf(rememberLazyListState())
 //        }
 
-        val scrollState = rememberLazyListState()
+//        val scrollState = rememberLazyListState()
+        val scrollState = rememberLazyGridState()
 
         if(windowInfo.screenHeight > windowInfo.screenWidth) {
             PortraitListScreen(navigator, viewModel, searchText, scrollState)
@@ -116,7 +127,7 @@ fun PortraitListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
     searchText: MutableState<String>,
-    scrollState: LazyListState,
+    scrollState: LazyGridState,
 ) {
     Column {
         Spacer(modifier = Modifier.height(20.dp))
@@ -144,7 +155,7 @@ fun LandscapeListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
     searchText: MutableState<String>,
-    scrollState: LazyListState,
+    scrollState: LazyGridState,
 ) {
     Column {
         Spacer(modifier = Modifier.height(12.dp))
@@ -210,7 +221,7 @@ fun SearchBar(
                 }
             ),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.White,
                 unfocusedBorderColor = Color.White
             ),
@@ -240,6 +251,7 @@ fun PokedexEntry(
     Box(
         contentAlignment = Center,
         modifier = modifier
+            .padding(5.dp)
             .shadow(5.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
             .aspectRatio(1f)
@@ -353,10 +365,11 @@ fun PokedexRowHorizontal(
 
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PokemonListVertical(
     navigator: DestinationsNavigator,
-    scrollState: LazyListState,
+    scrollState: LazyGridState,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
     val pokemonList by remember { viewModel.pokemonList }
@@ -365,21 +378,46 @@ fun PokemonListVertical(
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
 
-    LazyColumn(
-        state = scrollState,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        val itemCount = if(pokemonList.size % 2 == 0) {
-            pokemonList.size / 2
-        } else {
-            pokemonList.size / 2 + 1
-        }
-        items(itemCount) {
-            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
-                viewModel.loadPokedexPaginated()
+//    LazyColumn(
+//        state = scrollState,
+//        contentPadding = PaddingValues(16.dp)
+//    ) {
+//        val itemCount = if(pokemonList.size % 2 == 0) {
+//            pokemonList.size / 2
+//        } else {
+//            pokemonList.size / 2 + 1
+//        }
+//        items(itemCount) {
+//            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
+//                viewModel.loadPokedexPaginated()
+//            }
+//            PokedexRow(rowIndex = it, entries = pokemonList, navigator = navigator)
+//        }
+//    }
+
+    LaunchedEffect(scrollState) {
+        snapshotFlow { scrollState.firstVisibleItemIndex + scrollState.layoutInfo.visibleItemsInfo.size }
+            .collect { visibleItemCount ->
+                if (visibleItemCount >= pokemonList.size && !endReach && !isLoading && !isSearching) {
+                    viewModel.loadPokedexPaginated()
+                }
             }
-            PokedexRow(rowIndex = it, entries = pokemonList, navigator = navigator)
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(16.dp),
+        state = scrollState
+    ) {
+
+        items(pokemonList, key = { entry -> entry.pokemonName }) { entry ->
+            PokedexEntry(
+                entry = entry,
+                navigator = navigator,
+                modifier = Modifier.animateItemPlacement(animationSpec = tween(durationMillis = 300))
+            )
         }
+
     }
     
     Box(
@@ -397,10 +435,11 @@ fun PokemonListVertical(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PokemonListHorizontal(
     navigator: DestinationsNavigator,
-    scrollState: LazyListState,
+    scrollState: LazyGridState,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
 
@@ -410,21 +449,46 @@ fun PokemonListHorizontal(
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
 
-    LazyColumn(
-        state = scrollState,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        val itemCount = if(pokemonList.size % 3 == 0) {
-            pokemonList.size / 3
-        } else {
-            pokemonList.size / 3 + 1
-        }
-        items(itemCount) {
-            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
-                viewModel.loadPokedexPaginated()
+//    LazyColumn(
+//        state = scrollState,
+//        contentPadding = PaddingValues(16.dp)
+//    ) {
+//        val itemCount = if(pokemonList.size % 3 == 0) {
+//            pokemonList.size / 3
+//        } else {
+//            pokemonList.size / 3 + 1
+//        }
+//        items(itemCount) {
+//            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
+//                viewModel.loadPokedexPaginated()
+//            }
+//            PokedexRowHorizontal(rowIndex = it, entries = pokemonList, navigator = navigator)
+//        }
+//    }
+
+    LaunchedEffect(scrollState) {
+        snapshotFlow { scrollState.firstVisibleItemIndex + scrollState.layoutInfo.visibleItemsInfo.size }
+            .collect { visibleItemCount ->
+                if (visibleItemCount >= pokemonList.size && !endReach && !isLoading && !isSearching) {
+                    viewModel.loadPokedexPaginated()
+                }
             }
-            PokedexRowHorizontal(rowIndex = it, entries = pokemonList, navigator = navigator)
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        contentPadding = PaddingValues(16.dp),
+        state = scrollState
+    ) {
+
+        items(pokemonList, key = { entry -> entry.pokemonName }) { entry ->
+            PokedexEntry(
+                entry = entry,
+                navigator = navigator,
+                modifier = Modifier.animateItemPlacement(animationSpec = tween(durationMillis = 300))
+            )
         }
+
     }
 
     Box(
