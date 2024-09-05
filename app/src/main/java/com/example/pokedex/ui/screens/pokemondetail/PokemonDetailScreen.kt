@@ -1,5 +1,8 @@
 package com.example.pokedex.ui.screens.pokemondetail
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateValue
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -77,11 +80,13 @@ import java.util.Timer
 import java.util.TimerTask
 import kotlin.math.round
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Destination
 @Composable
-fun PokemonDetailScreen(
+fun SharedTransitionScope.PokemonDetailScreen(
     navigator : DestinationsNavigator,
     pokemon: PokemonListItem,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
     val pokemonInfo = produceState<Resource<Pokemon>>(initialValue = Resource.Loading() ) {
@@ -91,18 +96,20 @@ fun PokemonDetailScreen(
     val windowInfo = rememberWindowInfo()
 
     if(windowInfo.screenHeight > windowInfo.screenWidth) {
-        PokemonDetailPortraitView(navigator = navigator, pokemonInfo = pokemonInfo, pokemon = pokemon)
+        PokemonDetailPortraitView(navigator = navigator, pokemonInfo = pokemonInfo, pokemon = pokemon, animatedVisibilityScope = animatedVisibilityScope)
     } else {
-        PokemonDetailLandscapeView(navigator = navigator, pokemonInfo = pokemonInfo, pokemon = pokemon)
+        PokemonDetailLandscapeView(navigator = navigator, pokemonInfo = pokemonInfo, pokemon = pokemon, animatedVisibilityScope = animatedVisibilityScope)
     }
 
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun PokemonDetailPortraitView(
+fun SharedTransitionScope.PokemonDetailPortraitView(
     navigator: DestinationsNavigator,
     pokemonInfo : Resource<Pokemon>,
     pokemon: PokemonListItem,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     topPadding : Dp = 20.dp,
     pokemonImageSize : Dp = 200.dp
 ) {
@@ -150,28 +157,56 @@ fun PokemonDetailPortraitView(
             contentAlignment = Alignment.TopCenter,
             modifier = Modifier.fillMaxSize()
         ) {
-            if (pokemonInfo is Resource.Success) {
-                SubcomposeAsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(pokemonInfo.data?.sprites?.front_default)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = pokemonInfo.data?.name,
-                    modifier = Modifier
-                        .size(pokemonImageSize)
-                        .offset(y = topPadding)
-                )
-            }
+
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(pokemon.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = pokemonInfo.data?.name,
+                modifier = Modifier
+                    .sharedElement(
+                        state = rememberSharedContentState(key = pokemon.imageUrl),
+                        animatedVisibilityScope,
+                        boundsTransform = { _, _ ->
+                            tween(durationMillis = 1000)
+                        }
+                    )
+                    .size(pokemonImageSize)
+                    .offset(y = topPadding)
+            )
+
+//            if (pokemonInfo is Resource.Success) {
+//                SubcomposeAsyncImage(
+//                    model = ImageRequest.Builder(LocalContext.current)
+//                        .data(pokemon.imageUrl)
+//                        .crossfade(true)
+//                        .build(),
+//                    contentDescription = pokemonInfo.data?.name,
+//                    modifier = Modifier
+//                        .sharedElement(
+//                            state = rememberSharedContentState(key = pokemon.imageUrl),
+//                            animatedVisibilityScope,
+//                            boundsTransform = { _, _ ->
+//                                tween(durationMillis = 2000)
+//                            }
+//                        )
+//                        .size(pokemonImageSize)
+//                        .offset(y = topPadding)
+//                )
+//            }
         }
     }
 
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun PokemonDetailLandscapeView(
+fun SharedTransitionScope.PokemonDetailLandscapeView(
     navigator: DestinationsNavigator,
     pokemonInfo : Resource<Pokemon>,
     pokemon: PokemonListItem,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     topPadding : Dp = 30.dp,
     pokemonImageSize : Dp = 400.dp
 ) {
@@ -198,18 +233,37 @@ fun PokemonDetailLandscapeView(
                     .fillMaxWidth()
                     .weight(.4f)
             ) {
-                if (pokemonInfo is Resource.Success) {
-                    SubcomposeAsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(pokemonInfo.data?.sprites?.front_default)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = pokemonInfo.data?.name,
-                        modifier = Modifier
-                            .size(pokemonImageSize)
-                            .offset(y = topPadding)
-                    )
-                }
+
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(pokemonInfo.data?.sprites?.front_default)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = pokemonInfo.data?.name,
+                    modifier = Modifier
+                        .sharedElement(
+                            state = rememberSharedContentState(key = pokemon.imageUrl),
+                            animatedVisibilityScope,
+                            boundsTransform = { _, _ ->
+                                tween(durationMillis = 1000)
+                            }
+                        )
+                        .size(pokemonImageSize)
+                        .offset(y = topPadding)
+                )
+
+//                if (pokemonInfo is Resource.Success) {
+//                    SubcomposeAsyncImage(
+//                        model = ImageRequest.Builder(LocalContext.current)
+//                            .data(pokemonInfo.data?.sprites?.front_default)
+//                            .crossfade(true)
+//                            .build(),
+//                        contentDescription = pokemonInfo.data?.name,
+//                        modifier = Modifier
+//                            .size(pokemonImageSize)
+//                            .offset(y = topPadding)
+//                    )
+//                }
             }
 
             PokemonDetailStateWrapperLandscape(pokemonInfo = pokemonInfo,

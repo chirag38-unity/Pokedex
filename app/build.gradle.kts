@@ -93,8 +93,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
     // Compose - Destinations
-    implementation("io.github.raamcosta.compose-destinations:core:1.10.0")
-    ksp("io.github.raamcosta.compose-destinations:ksp:1.10.0")
+    implementation("io.github.raamcosta.compose-destinations:core:1.11.4-alpha")
+    ksp("io.github.raamcosta.compose-destinations:ksp:1.11.4-alpha")
 
     // Material libs
     implementation("androidx.compose.material:material-icons-core:1.7.0")

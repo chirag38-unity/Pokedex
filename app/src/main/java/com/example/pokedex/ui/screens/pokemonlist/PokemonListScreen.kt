@@ -1,5 +1,8 @@
 package com.example.pokedex.ui.screens.pokemonlist
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -17,15 +20,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -41,7 +40,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -92,42 +90,42 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import java.util.Locale
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Destination(start = true)
 @Composable
-fun PokemonListScreen(
+fun SharedTransitionScope.PokemonListScreen(
     navigator : DestinationsNavigator,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
     Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
     ) {
+
         val windowInfo = rememberWindowInfo()
         val searchText = rememberSaveable {
             mutableStateOf("")
         }
-//        var scrollState = rememberSaveable {
-//            mutableStateOf(rememberLazyListState())
-//        }
-
-//        val scrollState = rememberLazyListState()
         val scrollState = rememberLazyGridState()
 
         if(windowInfo.screenHeight > windowInfo.screenWidth) {
-            PortraitListScreen(navigator, viewModel, searchText, scrollState)
+            PortraitListScreen(navigator, viewModel, searchText, scrollState, animatedVisibilityScope)
         } else {
-            LandscapeListScreen(navigator = navigator, viewModel = viewModel, searchText, scrollState)
+            LandscapeListScreen(navigator = navigator, viewModel = viewModel, searchText, scrollState, animatedVisibilityScope)
         }
 
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun PortraitListScreen(
+fun SharedTransitionScope.PortraitListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
     searchText: MutableState<String>,
     scrollState: LazyGridState,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     Column {
         Spacer(modifier = Modifier.height(20.dp))
@@ -146,16 +144,18 @@ fun PortraitListScreen(
             viewModel.searchPokedexList(it)
         }
         Spacer(modifier = Modifier.height(16.dp))
-        PokemonListVertical(navigator = navigator, scrollState)
+        PokemonListVertical(navigator = navigator, scrollState, animatedVisibilityScope)
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun LandscapeListScreen(
+fun SharedTransitionScope.LandscapeListScreen(
     navigator: DestinationsNavigator,
     viewModel: PokedexListViewModel,
     searchText: MutableState<String>,
     scrollState: LazyGridState,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     Column {
         Spacer(modifier = Modifier.height(12.dp))
@@ -176,7 +176,7 @@ fun LandscapeListScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        PokemonListHorizontal(navigator = navigator, scrollState)
+        PokemonListHorizontal(navigator = navigator, scrollState, animatedVisibilityScope)
     }
 }
 
@@ -236,10 +236,12 @@ fun SearchBar(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun PokedexEntry(
+fun SharedTransitionScope.PokedexEntry(
     entry : PokedexListEntry,
     navigator : DestinationsNavigator,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
@@ -267,7 +269,8 @@ fun PokedexEntry(
                     PokemonDetailScreenDestination(
                         PokemonListItem(
                             dominantColor = dominantColor.toArgb(),
-                            name = entry.pokemonName.toLowerCase(Locale.ROOT) ?: ""
+                            name = entry.pokemonName.toLowerCase(Locale.ROOT) ?: "",
+                            imageUrl = entry.imageUrl
                         )
                     )
                 )
@@ -292,84 +295,41 @@ fun PokedexEntry(
                 },
                 contentDescription = "${entry.pokemonName} image" ,
                 modifier = Modifier
+                    .sharedElement(
+                        state = rememberSharedContentState(key = entry.imageUrl),
+                        animatedVisibilityScope,
+                        boundsTransform = { _, _ ->
+                            tween(durationMillis = 1000)
+                        }
+                    )
                     .size(120.dp)
                     .align(CenterHorizontally),
             )
-            Text(text = entry.pokemonName,
+            Text(
+                text = entry.pokemonName,
                 fontFamily = RobotoCondensed,
                 fontSize = 20.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth())
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .sharedElement(
+                        state = rememberSharedContentState(key = entry.pokemonName),
+                        animatedVisibilityScope,
+                        boundsTransform = { _, _ ->
+                            tween(durationMillis = 1000)
+                        }
+                    )
+            )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun PokedexRow(
-    rowIndex : Int,
-    entries : List<PokedexListEntry>,
-    navigator: DestinationsNavigator
-) {
-    Column {
-        Row {
-            PokedexEntry(entry = entries[rowIndex *2],
-                navigator = navigator,
-                modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(16.dp))
-            if(entries.size >= rowIndex * 2 + 2) {
-                PokedexEntry(entry = entries[rowIndex * 2 + 1],
-                    navigator = navigator,
-                    modifier = Modifier.weight(1f))
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-fun PokedexRowHorizontal(
-    rowIndex : Int,
-    entries : List<PokedexListEntry>,
-    navigator: DestinationsNavigator
-) {
-
-    Column {
-        Row {
-            PokedexEntry(entry = entries[rowIndex * 3],
-                navigator = navigator,
-                modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(16.dp))
-            if(entries.size >= rowIndex * 3 + 3) {
-                PokedexEntry(entry = entries[rowIndex * 3 + 1],
-                    navigator = navigator,
-                    modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(16.dp))
-                PokedexEntry(entry = entries[rowIndex * 3 + 2],
-                    navigator = navigator,
-                    modifier = Modifier.weight(1f))
-            } else if (entries.size >= rowIndex * 3 + 2) {
-                PokedexEntry(entry = entries[rowIndex * 3 + 1],
-                    navigator = navigator,
-                    modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.weight(1f))
-            }
-            else {
-                Spacer(modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun PokemonListVertical(
+fun SharedTransitionScope.PokemonListVertical(
     navigator: DestinationsNavigator,
     scrollState: LazyGridState,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
     val pokemonList by remember { viewModel.pokemonList }
@@ -377,23 +337,6 @@ fun PokemonListVertical(
     val loadError by remember { viewModel.loadError }
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
-
-//    LazyColumn(
-//        state = scrollState,
-//        contentPadding = PaddingValues(16.dp)
-//    ) {
-//        val itemCount = if(pokemonList.size % 2 == 0) {
-//            pokemonList.size / 2
-//        } else {
-//            pokemonList.size / 2 + 1
-//        }
-//        items(itemCount) {
-//            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
-//                viewModel.loadPokedexPaginated()
-//            }
-//            PokedexRow(rowIndex = it, entries = pokemonList, navigator = navigator)
-//        }
-//    }
 
     LaunchedEffect(scrollState) {
         snapshotFlow { scrollState.firstVisibleItemIndex + scrollState.layoutInfo.visibleItemsInfo.size }
@@ -414,6 +357,7 @@ fun PokemonListVertical(
             PokedexEntry(
                 entry = entry,
                 navigator = navigator,
+                animatedVisibilityScope,
                 modifier = Modifier.animateItemPlacement(animationSpec = tween(durationMillis = 300))
             )
         }
@@ -435,11 +379,12 @@ fun PokemonListVertical(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun PokemonListHorizontal(
+fun SharedTransitionScope.PokemonListHorizontal(
     navigator: DestinationsNavigator,
     scrollState: LazyGridState,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: PokedexListViewModel = hiltViewModel()
 ) {
 
@@ -449,22 +394,6 @@ fun PokemonListHorizontal(
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
 
-//    LazyColumn(
-//        state = scrollState,
-//        contentPadding = PaddingValues(16.dp)
-//    ) {
-//        val itemCount = if(pokemonList.size % 3 == 0) {
-//            pokemonList.size / 3
-//        } else {
-//            pokemonList.size / 3 + 1
-//        }
-//        items(itemCount) {
-//            if(it >= itemCount - 1 && !endReach && !isLoading && !isSearching) {
-//                viewModel.loadPokedexPaginated()
-//            }
-//            PokedexRowHorizontal(rowIndex = it, entries = pokemonList, navigator = navigator)
-//        }
-//    }
 
     LaunchedEffect(scrollState) {
         snapshotFlow { scrollState.firstVisibleItemIndex + scrollState.layoutInfo.visibleItemsInfo.size }
@@ -485,6 +414,7 @@ fun PokemonListHorizontal(
             PokedexEntry(
                 entry = entry,
                 navigator = navigator,
+                animatedVisibilityScope,
                 modifier = Modifier.animateItemPlacement(animationSpec = tween(durationMillis = 300))
             )
         }
